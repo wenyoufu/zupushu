@@ -1,0 +1,106 @@
+在MySQL中，可以使用以下表结构存储族谱树的数据：
+
+CREATE TABLE `family_tree` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `sex` varchar(10) NOT NULL,
+  `rank` int(11) NOT NULL,
+  `couple` varchar(255) DEFAULT NULL,
+  `born` varchar(20) NOT NULL,
+  `remark` varchar(255) DEFAULT NULL,
+  `parent_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_parent_id` (`parent_id`),
+  CONSTRAINT `fk_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `family_tree` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+其中，parent_id表示当前节点的父节点的id，如果是根节点则为null。
+
+使用gorm可以通过以下代码读取族谱树数据并打印：
+
+type FamilyTree struct {
+    ID       int
+    Name     string
+    Sex      string
+    Rank     uint
+    Couple   string
+    Born     string
+    Remark   string
+    ParentID *int
+    Children []*FamilyTree `gorm:"foreignkey:ParentID"`
+}
+
+func (t *FamilyTree) AddChild(child *FamilyTree) {
+    t.Children = append(t.Children, child)
+}
+
+func PrintFamilyTree(tree *FamilyTree, level int) {
+    for i := 0; i < level; i++ {
+        fmt.Print("  ")
+    }
+    fmt.Println(tree.Name)
+    for _, child := range tree.Children {
+        PrintFamilyTree(child, level+1)
+    }
+}
+
+func main() {
+    db, err := gorm.Open(mysql.Open("user:password@tcp(host:port)/database"), &gorm.Config{})
+    if err != nil {
+        panic(err)
+    }
+
+    var root FamilyTree
+    if err := db.Where("parent_id is null").First(&root).Error; err != nil {
+        panic(err)
+    }
+
+    if err := db.Preload("Children").Find(&root).Error; err != nil {
+        panic(err)
+    }
+
+    PrintFamilyTree(&root, 0)
+}
+
+其中，Preload("Children")表示预加载Children字段，避免N+1查询问题。
+
+
+以下是一个简单的测试用例，包括向MySQL中插入数据并读取族谱树：
+
+func TestFamilyTree(t *testing.T) {
+    db, err := gorm.Open(mysql.Open("user:password@tcp(host:port)/database"), &gorm.Config{})
+    if err != nil {
+        t.Fatal(err)
+    }
+    err = db.AutoMigrate(&FamilyTree{})
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    // 插入数据
+    root := &FamilyTree{Name: "爷爷", Sex: "男", Rank: 1, Born: "1900-01-01"}
+    db.Create(root)
+    father := &FamilyTree{Name: "父亲", Sex: "男", Rank: 2, Born: "1930-01-01", ParentID: &root.ID}
+    db.Create(father)
+    mother := &FamilyTree{Name: "母亲", Sex: "女", Rank: 2, Born: "1935-01-01", ParentID: &root.ID}
+    db.Create(mother)
+    son := &FamilyTree{Name: "儿子", Sex: "男", Rank: 3, Born: "1960-01-01", ParentID: &father.ID}
+    db.Create(son)
+    daughter := &FamilyTree{Name: "女儿", Sex: "女", Rank: 3, Born: "1965-01-01", ParentID: &father.ID}
+    db.Create(daughter)
+
+    // 读取数据
+    if err := db.Preload("Children").Find(&root).Error; err != nil {
+        t.Fatal(err)
+    }
+
+    // 打印族谱树
+    PrintFamilyTree(root, 0)
+}
+
+向MySQL中插入数据可以使用db.Create方法，例如：
+
+root := &FamilyTree{Name: "爷爷", Sex: "男", Rank: 1, Born: "1900-01-01"}
+db.Create(root)
+
+其中，root是一个FamilyTree结构体，表示要插入的节点。其他字段的值根据具体情况填写即可。如果节点有父节点，需要指定ParentID字段。
