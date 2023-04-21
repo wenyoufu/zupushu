@@ -94,6 +94,11 @@ func (t *FamilyTree) Delete(db *gorm.DB, delName string) {
 func (t *FamilyTree) AddChild(db *gorm.DB, root *FamilyTree, father *FamilyTree, child *FamilyTree) {
 	//t.SubAddChild(db, root, father, child)
 	f := root.FindByName(father.Name)
+	son := root.FindByName(child.Name)
+	if son != nil {
+		log.Println("重名不允许添加", child.Name)
+		return
+	}
 	// 异常判断处理
 	// 添加父亲标识
 	addFather := false
@@ -190,4 +195,34 @@ func (t *FamilyTree) PrintDetailByName(name string) {
 			f.Name, f.Sex, f.Rank, f.Born, f.Couple, childNum, f.ReMark)
 
 	}
+}
+
+func (t *FamilyTree) PrintDetailByNameStr(name string) string {
+	if t == nil {
+		return ""
+	}
+	if f := t.FindByName(name); f != nil {
+		//var copule []string
+		//_ = json.Unmarshal([]byte(f.Couple), &copule)
+		if f.Sex == "" {
+			f.Sex = "男"
+		}
+		childNum := 0
+		if f.Children != nil {
+			childNum = len(f.Children)
+		}
+		fmt.Printf("姓名:%v\n性别:%v\n排行:%v\n出生日期：%v\n配偶:%v\n"+
+			"子嗣数量:%v\n备注:%v\n",
+			f.Name, f.Sex, f.Rank, f.Born, f.Couple, childNum, f.ReMark)
+		resStr := fmt.Sprintf("姓名:%v " +
+			"性别:%v " +
+			"排行:%v " +
+			"出生日期：%v " +
+			"配偶:%v "+
+			"子嗣数量:%v " +
+			"备注:%v ",
+			f.Name, f.Sex, f.Rank, f.Born, f.Couple, childNum, f.ReMark)
+		return  resStr
+	}
+	return ""
 }

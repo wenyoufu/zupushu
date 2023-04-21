@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"log"
 	"testing"
 	"treeJiazu/core"
@@ -17,6 +18,28 @@ func TestPrint(t *testing.T) {
 	}
 	root.ConstructTree(db)
 	root.PrintTree(0)
+}
+
+type TableComment struct {
+	TableName string
+	Comment   string
+}
+
+func TestPrintComment(t *testing.T) {
+	db, err := core.OpenDb(treebuild.DBUser, treebuild.DBPass, treebuild.DBIpPort, treebuild.DBName)
+	//defer db.Close()
+	//db, err := gorm.Open("mysql", "root:127.0.0.1@tcp(127.0.0.1:3306)/db_tree?charset=utf8&parseTime=True&loc=Local")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	var tableComments []TableComment
+	db.Raw("SELECT table_name, table_comment FROM information_schema.tables WHERE table_schema = ?", "db_tree").Scan(&tableComments)
+
+	for _, tc := range tableComments {
+		fmt.Printf("Table Name: %s\nComment: %s\n\n", tc.TableName, tc.Comment)
+	}
 }
 
 func TestPrintDetail(t *testing.T) {
@@ -40,7 +63,7 @@ func TestAddChild(t *testing.T) {
 		log.Fatal(err)
 	}
 	root.ConstructTree(db)
-	root.AddChild(db, root, &core.FamilyTree{Name: "温茂景"}, &core.FamilyTree{Name: "温怡宁2", Couple: "AAAA",Rank: 1, Sex: "女"})
+	root.AddChild(db, root, &core.FamilyTree{Name: "温茂景"}, &core.FamilyTree{Name: "温怡宁2", Couple: "AAAA", Rank: 1, Sex: "女"})
 	root.PrintTree(0)
 }
 
@@ -53,7 +76,7 @@ func TestAddFatherNode(t *testing.T) {
 	if err := db.Where("name = ?", oldRoot.Name).Preload("Children").Find(&oldRoot).Error; err != nil {
 		log.Fatal(err)
 	}
-	addRoot.AddChild(db,oldRoot,addRoot,oldRoot)
+	addRoot.AddChild(db, oldRoot, addRoot, oldRoot)
 	addRoot.ConstructTree(db)
 	addRoot.PrintTree(0)
 }
@@ -84,5 +107,3 @@ func TestUpdate(t *testing.T) {
 	root.UpdateReMarkByName(db, "温怡宁2", "测试111")
 	root.PrintTree(0)
 }
-
-

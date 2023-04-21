@@ -7,12 +7,13 @@ import (
 )
 
 const (
-	DBUser = "root"
-	DBPass = "Abc@123456"
-	DBName = "db_tree"
+	DBUser   = "root"
+	DBPass   = "Abc@123456"
+	DBName   = "db_tree"
 	DBIpPort = "127.0.0.1:3306"
 )
-func GetRootByName(name string) (*gorm.DB,*core.FamilyTree) {
+
+func GetRootByName(name string) (*gorm.DB, *core.FamilyTree) {
 	db, _ := core.OpenDb(DBUser, DBPass, DBIpPort, DBName)
 	root := &core.FamilyTree{Name: name, Rank: 1}
 	// 读取数据
@@ -825,8 +826,6 @@ func BuildXueFuTree() *core.FamilyTree {
 }
 
 func BuildWenShiJiaZu() {
-	db, _ := core.OpenDb(DBUser, DBPass, DBIpPort, DBName)
-	defer db.Close()
 	_ = BuildL1To5Tree()
 	_ = BuildL5To6Tree()
 	_ = BuildL6To7Tree()
@@ -849,20 +848,22 @@ func BuildWenShiJiaZu() {
 	BuildXueRongJunGongTree()
 }
 func UpdateInfo() {
-	db, root:=GetRootByName("温友贵")
+	db, root := GetRootByName("温友贵")
 	defer db.Close()
 	if root != nil {
-		root.UpdateReMarkByName(db,"温自富","以上埋葬于南苗坐兹爽坨于西北")
-		root.UpdateReMarkByName(db,"温其禄","少亡")
-		root.UpdateReMarkByName(db,"温其禄","少亡")
-		root.UpdateReMarkByName(db,"温其光","出嫁")
-		root.UpdateReMarkByName(db,"温其明","出嫁")
-		root.UpdateReMarkByName(db,"温学武","抗日牺牲")
-		root.UpdateReMarkByName(db,"温德合","全家现住吉林省白山市")
-		root.UpdateReMarkByName(db,"温茂生","生子一人,离婚带走")
-		root.UpdateReMarkByName(db,"温德耀","现住赵各庄")
-		root.UpdateReMarkByName(db,"温其美","移居关外，下落不明")
-		root.UpdateReMarkByName(db,"温有福","统招硕士-北京交通大学")
-		root.UpdateReMarkByName(db,"温宝福","已移居江苏南京;统招本科-南京邮电大学")
+		root.UpdateReMarkByName(db, "温自富", "以上埋葬于南苗坐兹爽坨于西北")
+		root.UpdateReMarkByName(db, "温其禄", "少亡")
+		root.UpdateReMarkByName(db, "温其禄", "少亡")
+		root.UpdateReMarkByName(db, "温其光", "出嫁")
+		root.UpdateReMarkByName(db, "温其明", "出嫁")
+		root.UpdateReMarkByName(db, "温学武", "抗日牺牲")
+		root.UpdateReMarkByName(db, "温德合", "全家现住吉林省白山市")
+		root.UpdateReMarkByName(db, "温茂生", "生子一人,离婚带走")
+		root.UpdateReMarkByName(db, "温德耀", "现住赵各庄")
+		root.UpdateReMarkByName(db, "温其美", "移居关外，下落不明")
+		root.UpdateReMarkByName(db, "温有福", "统招硕士-北京交通大学")
+		root.AddChild(db, root, root.FindByName("温有福"),
+			&core.FamilyTree{Name: "温暖",Rank: 1,ReMark: "温暖为其小名"})
+		root.UpdateReMarkByName(db, "温宝福", "已移居江苏南京;统招本科-南京邮电大学")
 	}
 }
